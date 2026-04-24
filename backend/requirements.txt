@@ -1,3 +1,4 @@
 httpx
 cryptography
 python-dotenv
+web3
