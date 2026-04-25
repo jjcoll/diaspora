@@ -4,7 +4,7 @@ type IconName =
   | "download" | "external" | "shield" | "receipt" | "lightning"
   | "clock" | "loader" | "settings" | "more" | "globe" | "book"
   | "mic" | "mic-off" | "home" | "bell" | "search" | "wallet"
-  | "chevron-down" | "dots-grid" | "link" | "dollar";
+  | "chevron-down" | "dots-grid" | "link" | "dollar" | "paperclip";
 
 interface Props {
   name: IconName;
@@ -88,6 +88,8 @@ export default function Icon({ name, size = 16, className = "" }: Props) {
       return <svg {...common}><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>;
     case "dollar":
       return <svg {...common}><path d="M12 2v20"/><path d="M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
+    case "paperclip":
+      return <svg {...common}><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>;
     default:
       return null;
   }

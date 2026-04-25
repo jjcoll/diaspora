@@ -1,6 +1,6 @@
 # Diaspora
 
-An AI agent inside bunq that executes compliant cross-border payments using stablecoins as invisible rails — turning 5-day transfers into 20-second, fully auditable transactions.
+A multimodal AI payment agent that turns plain language, voice notes, and invoice documents into compliant cross-border transfers — using stablecoins as invisible rails to collapse 5-day, ~7%-fee SEPA payments into 20-second, fully auditable transactions on top of bunq.
 
 ## The Problem
 
@@ -8,9 +8,9 @@ Paying a freelancer in Venezuela or Nigeria from a European bank account today m
 
 ## The Solution
 
-A bunq-resident AI agent that takes a plain-language instruction (*"pay José €500"*), routes it through stablecoin rails, and hands back a receipt that an auditor would sign off on — all in under 20 seconds.
+A multimodal AI agent that takes a plain-language instruction (*"pay José €500"*), a voice note, or an uploaded invoice, routes the payment through stablecoin rails, and hands back a receipt that an auditor would sign off on — all in under 20 seconds.
 
-The user sees a single conversational surface: voice or text in, a transparent quote card to approve, then a receipt with an on-chain transaction hash. The compliance, FX, settlement, and audit-packet generation happen invisibly in between.
+The user sees a single conversational surface: text, voice, or document in, a transparent quote card to approve, then a receipt with an on-chain transaction hash. The compliance, FX, settlement, and audit-packet generation happen invisibly in between.
 
 ## How the Agent Works
 
@@ -51,6 +51,8 @@ Each agent turn runs in a server-side thread. Events stream to the frontend via 
    │
    ├──► bunq sandbox API     (balance: real | SEPA: stubbed)
    ├──► Anthropic API         (Claude Sonnet 4.5)
+   ├──► Amazon Transcribe     (voice → text, batch via S3)
+   ├──► Amazon Textract       (invoice → structured fields, AnalyzeExpense)
    └──► Base Sepolia RPC      (wallet/setup only; settlement uses pre-baked tx)
 ```
 
@@ -61,10 +63,14 @@ Each agent turn runs in a server-side thread. Events stream to the frontend via 
 | `GET` | `/api/health` | Liveness probe |
 | `GET` | `/api/contractors` | Contact book + (synthetic) payment history |
 | `POST` | `/api/chat` | SSE-streamed agent turn |
+| `POST` | `/api/transcribe` | Voice note (multipart audio) → text via Amazon Transcribe |
+| `POST` | `/api/extract-invoice` | Invoice (PDF / image) → `{vendor, amount, currency, invoice_ref}` via Amazon Textract |
 
 ### Frontend flow
 
-`PaymentsTab` → `Composer` (text or voice) → SSE-driven timeline that renders each step the agent runs → `QuoteCard` (suppresses the composer until the user clicks **Confirm**) → `ReceiptSummary` → `ReceiptModal` with a downloadable PDF receipt and a block-explorer link.
+`PaymentsTab` → `Composer` (text, voice, or invoice attachment) → SSE-driven timeline that renders each step the agent runs → `QuoteCard` (suppresses the composer until the user clicks **Confirm**) → `ReceiptSummary` → `ReceiptModal` with a downloadable PDF receipt and a block-explorer link.
+
+The `Composer` records voice with the browser `MediaRecorder` API and POSTs the blob to `/api/transcribe` (Amazon Transcribe). For documents, the paperclip button opens a file picker, POSTs the file to `/api/extract-invoice` (Amazon Textract `AnalyzeExpense`), and prefills the input with `Pay {vendor} {amount} {currency} for invoice {invoice_ref}` so the user can review and send.
 
 ## Auditability
 
@@ -88,11 +94,12 @@ The packet is structured so an auditor gets identity, consent, screening, execut
 | bunq balance check (RSA-signed GET) | real | `app/bunq.py` |
 | Anthropic tool-use loop | real | `app/agent.py` |
 | Audit packet (JSON + SHA-256) | real | `app/audit.py` |
+| Voice input → text (Amazon Transcribe, batch via S3) | real | `app/aws.py`, `POST /api/transcribe` |
+| Invoice scan → structured fields (Amazon Textract `AnalyzeExpense`) | real | `app/aws.py`, `POST /api/extract-invoice` |
 | AML screening | stub | drop-in shape for Didit |
 | FX quote | stub | hardcoded 1.08, ECB/Wise drop-in |
 | SEPA payment execution | stub | shape matches a bridge.xyz off-ramp IBAN call |
 | USDC settlement | stub | returns a pre-baked Base Sepolia tx hash from setup |
-| Voice input | stub | fixed transcript on a 1.2s delay (Whisper drop-in) |
 
 Every stub lives in `app/stubs.py` and returns the exact shape the real API would. Swapping in a live integration is a single-file change.
 
@@ -101,7 +108,7 @@ Every stub lives in `app/stubs.py` and returns the exact shape the real API woul
 ```bash
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-cp .env.example .env                              # BUNQ_API_KEY, ANTHROPIC_API_KEY
+cp .env.example .env                              # BUNQ_API_KEY, ANTHROPIC_API_KEY, AWS_*
 .venv/bin/python scripts/bunq_setup.py            # RSA handshake → bunq_context.json
 .venv/bin/python scripts/sepolia_setup.py         # wallet + FAKE_TX_HASH for settlement
 .venv/bin/uvicorn app.server:app --reload         # API on :8000
@@ -115,10 +122,11 @@ npm run dev                                       # UI on :5173
 
 ## Known Limitations
 
-- Voice input ships a fixed transcript for the demo — wire Whisper or Deepgram for real STT.
 - AML, FX, SEPA execution, and USDC settlement are stubs with the right shape but no upstream calls.
 - Sessions are in-memory; a server restart drops history.
 - The bunq SEPA leg targets a stand-in payee — production needs a real off-ramp IBAN (Bridge / BVNK).
+- AWS workshop credentials are short-lived (a few hours). Refresh via CloudShell `aws configure export-credentials --format env` before each demo.
+- Textract `AnalyzeExpense` synchronous path supports single-page PDFs and images. Multi-page invoices need the async API.
 
 ## Future Considerations
 
@@ -133,8 +141,9 @@ npm run dev                                       # UI on :5173
 | Layer | Choice |
 |---|---|
 | Agent | Claude Sonnet 4.5 (Anthropic SDK), tool-use loop |
-| Backend | FastAPI, Server-Sent Events, httpx, cryptography (RSA), web3.py |
-| Frontend | React 18, TypeScript, Vite |
+| Backend | FastAPI, Server-Sent Events, httpx, cryptography (RSA), web3.py, boto3 |
+| Frontend | React 18, TypeScript, Vite, MediaRecorder API |
 | Banking | bunq sandbox API (RSA-2048 signed) |
+| Multimodal | Amazon Transcribe (voice), Amazon Textract `AnalyzeExpense` (documents) |
 | Chain | Base Sepolia (chain 84532), USDC |
 | Audit | JSON + SHA-256 receipt hash |

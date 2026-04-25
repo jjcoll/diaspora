@@ -3,3 +3,7 @@ cryptography
 python-dotenv
 web3
 anthropic
+boto3
+fastapi
+uvicorn[standard]
+python-multipart

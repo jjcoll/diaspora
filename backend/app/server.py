@@ -5,12 +5,13 @@ import queue
 import threading
 from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from .agent import _agent_turn
+from .aws import extract_invoice, transcribe_audio
 from .tools import CONTACTS
 
 app = FastAPI(title="diaspora")
@@ -103,3 +104,38 @@ def chat(body: ChatBody):
             yield f"data: {json.dumps(ev)}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@app.post("/api/transcribe")
+async def transcribe_endpoint(audio: UploadFile = File(...)):
+    data = await audio.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="empty audio")
+    mime = audio.content_type or "audio/webm"
+    try:
+        text = transcribe_audio(data, mime=mime)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"transcribe failed: {exc}")
+    return {"text": text.strip()}
+
+
+@app.post("/api/extract-invoice")
+async def extract_invoice_endpoint(file: UploadFile = File(...)):
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="empty file")
+    try:
+        fields = extract_invoice(data)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"textract failed: {exc}")
+    parts = ["Pay"]
+    if fields["vendor"]:
+        parts.append(fields["vendor"])
+    if fields["amount"] is not None:
+        amount = fields["amount"]
+        amount_str = f"{amount:.2f}".rstrip("0").rstrip(".") if isinstance(amount, float) else str(amount)
+        parts.append(f"{amount_str} {fields['currency']}")
+    if fields["invoice_ref"]:
+        parts.append(f"for invoice {fields['invoice_ref']}")
+    prefilled = " ".join(parts) if len(parts) > 1 else ""
+    return {"fields": fields, "prefilled": prefilled}
