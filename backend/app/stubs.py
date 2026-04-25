@@ -1,19 +1,20 @@
 """
 Stub implementations — replace with real integrations.
 
-aml_screen        → Didit API
-generate_fx_quote → live FX feed
+aml_screen               → Didit API
+generate_fx_quote        → live FX feed
+stub_sepa_payment        → real bunq SEPA call to bridge.xyz off-ramp IBAN
 simulate_usdc_settlement → Bridge / BVNK off-ramp
 """
-import os, time, uuid
+import os
+import time
+import uuid
 from datetime import datetime, timezone
-from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
+from . import config  # noqa: F401  (loads .env)
 
 
 def aml_screen(wallet_address: str, country: str) -> dict:
-    """TODO: replace with real Didit API call."""
     return {
         "cleared": True,
         "risk_score": "LOW",
@@ -25,7 +26,6 @@ def aml_screen(wallet_address: str, country: str) -> dict:
 
 
 def generate_fx_quote(eur_amount: float) -> dict:
-    """TODO: replace with live FX feed (ECB, Wise, etc.)."""
     fx_rate = 1.08
     usdc_amount = round(eur_amount * fx_rate, 2)
     fee_eur = round(eur_amount * 0.004, 2)
@@ -41,9 +41,18 @@ def generate_fx_quote(eur_amount: float) -> dict:
     }
 
 
+def stub_sepa_payment(eur_amount: float, recipient_name: str, reference_id: str) -> dict:
+    return {
+        "payment_id": f"stub-{uuid.uuid4().hex[:12]}",
+        "reference_id": reference_id,
+        "status": "EXECUTED",
+        "eur_amount": eur_amount,
+        "recipient_name": recipient_name,
+    }
+
+
 def simulate_usdc_settlement(reference_id: str, usdc_amount: float) -> dict:
-    """TODO: replace with Bridge / BVNK off-ramp webhook or API call."""
-    print("   ⏳ Routing to off-ramp partner...")
+    print("   Routing to off-ramp partner...")
     time.sleep(3)
     tx_hash = os.getenv("FAKE_TX_HASH")
     block = os.getenv("FAKE_BLOCK_NUMBER")

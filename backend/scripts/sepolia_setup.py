@@ -4,7 +4,9 @@ from web3 import Web3
 from eth_account import Account
 from dotenv import load_dotenv, set_key
 
-load_dotenv()
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV_PATH = os.path.join(BACKEND_DIR, ".env")
+load_dotenv(dotenv_path=ENV_PATH)
 
 # ── 1. Generate wallet ─────────────────────────────────────────────────────
 account = Account.create()
@@ -26,8 +28,8 @@ if balance == 0:
     print(f"   https://faucet.quicknode.com/base/sepolia")
     print(f"   Wallet: {account.address}")
     print("\nThen re-run this script with your private key set in .env as SEPOLIA_PRIVATE_KEY")
-    set_key(".env", "SEPOLIA_WALLET", account.address)
-    set_key(".env", "SEPOLIA_PRIVATE_KEY", account.key.hex())
+    set_key(ENV_PATH, "SEPOLIA_WALLET", account.address)
+    set_key(ENV_PATH, "SEPOLIA_PRIVATE_KEY", account.key.hex())
     exit(0)
 
 # ── 4. Send a self-transfer (creates the pre-baked tx hash) ───────────────
@@ -76,9 +78,9 @@ print(f"   Block number: {receipt['blockNumber']}")
 print(f"   Explorer:     https://sepolia.basescan.org/tx/{tx_hash.hex()}")
 
 # ── 5. Write to .env automatically ────────────────────────────────────────
-set_key(".env", "SEPOLIA_WALLET", sender.address)
-set_key(".env", "SEPOLIA_PRIVATE_KEY", private_key)
-set_key(".env", "FAKE_TX_HASH", tx_hash.hex())
-set_key(".env", "FAKE_BLOCK_NUMBER", str(receipt['blockNumber']))
+set_key(ENV_PATH, "SEPOLIA_WALLET", sender.address)
+set_key(ENV_PATH, "SEPOLIA_PRIVATE_KEY", private_key)
+set_key(ENV_PATH, "FAKE_TX_HASH", tx_hash.hex())
+set_key(ENV_PATH, "FAKE_BLOCK_NUMBER", str(receipt['blockNumber']))
 
 print(f"\n✅ .env updated — you're done!")

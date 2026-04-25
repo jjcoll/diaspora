@@ -52,3 +52,5 @@ htmlcov/
 *.db
 tmp/
 backend/data/diaspora.db*
+backend/bunq_context.json
+backend/audit_packets/

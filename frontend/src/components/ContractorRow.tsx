@@ -1,10 +1,17 @@
 import { StatusPill } from "./Pill";
-import { countryName, flagFor, formatEUR, truncateMid } from "../lib/format";
+import { countryName, formatEUR, truncateMid } from "../lib/format";
 import type { Contractor } from "../types";
 
 interface Props {
   contractor: Contractor;
   onSelect: () => void;
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 export default function ContractorRow({ contractor: c, onSelect }: Props) {
@@ -14,7 +21,7 @@ export default function ContractorRow({ contractor: c, onSelect }: Props) {
 
   return (
     <button className="contractor" onClick={onSelect}>
-      <div className="flag-ring">{flagFor(c.country)}</div>
+      <div className="initials-ring">{initials(c.name)}</div>
       <div className="who">
         <div className="name">{c.name}</div>
         <div className="meta">

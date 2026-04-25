@@ -1,0 +1,51 @@
+{
+  "jose": {
+    "name": "José Reyes",
+    "wallet": "0xdc7348975ae9334dbdcb944dda9163ba8406a0ec",
+    "country": "PH",
+    "currency": "USDC",
+    "invoice_ref": "OCT-2024-001"
+  },
+  "aisha": {
+    "name": "Aisha Bello",
+    "wallet": "0x3f9a1b6e2c4d8e7f0a1b2c3d4e5f60718293a4b5",
+    "country": "NG",
+    "currency": "USDC",
+    "invoice_ref": "OCT-2024-014"
+  },
+  "diego": {
+    "name": "Diego Vargas",
+    "wallet": "0x5b1f8e2a9c4d6b0e7f3a2c1d4e5b6c7d8e9f0a1b",
+    "country": "AR",
+    "currency": "USDC",
+    "invoice_ref": "Q4-DESIGN-007"
+  },
+  "priya": {
+    "name": "Priya Sharma",
+    "wallet": "0x7c2e5a1f9d8b4c6e3a0f2b1c4d5e6f7a8b9c0d1e",
+    "country": "IN",
+    "currency": "USDC",
+    "invoice_ref": "RETAINER-Q4-002"
+  },
+  "mateus": {
+    "name": "Mateus Silva",
+    "wallet": "0x9a4f1c7e2b8d3a5c6e0f1b2c3d4e5f6a7b8c9d0e",
+    "country": "BR",
+    "currency": "USDC",
+    "invoice_ref": "BACKEND-OCT-022"
+  },
+  "layla": {
+    "name": "Layla Hassan",
+    "wallet": "0x2e8b4f1a6c3d5e7f0a1b2c3d4e5f6a7b8c9d0e1f",
+    "country": "EG",
+    "currency": "USDC",
+    "invoice_ref": "COPY-Q4-009"
+  },
+  "chidinma": {
+    "name": "Chidinma Okafor",
+    "wallet": "0x4d1a7f2e9b8c3a5d6e0f1b2c3d4e5f6a7b8c9d0e",
+    "country": "NG",
+    "currency": "USDC",
+    "invoice_ref": "BACKEND-Q2-RETAINER"
+  }
+}

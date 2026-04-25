@@ -46,16 +46,25 @@ Every payment the agent executes carries the evidence needed to stand up to an a
 ```
 diaspora/
 ├── backend/
-│   ├── agent.py          # Claude-powered payment agent (main entry point)
-│   ├── stubs.py          # Stub implementations (AML, FX, off-ramp settlement)
-│   ├── contacts.json     # Contractor contact book
-│   ├── bunq_setup.py     # One-time bunq sandbox auth handshake (RSA + session)
-│   ├── bunq_test.py      # bunq connectivity + sugar daddy top-up test
-│   ├── sepolia_setup.py  # Wallet generation + Base Sepolia USDC self-transfer
-│   ├── web3_test.py      # Base Sepolia connectivity + tx verification test
-│   ├── requirements.txt  # Python dependencies
-│   └── .env.example      # Environment variable template
-├── frontend/             # React + timeline UI (TBD)
+│   ├── app/
+│   │   ├── agent.py        # REPL + Claude tool loop (entry point)
+│   │   ├── tools.py        # tool defs: list/resolve_contractor, balance, fx, sepa
+│   │   ├── bunq.py         # bunq HTTP helpers (RSA signing, headers, balance)
+│   │   ├── audit.py        # generate_audit_packet (JSON + SHA-256)
+│   │   ├── stubs.py        # stub impls (AML, FX, SEPA, USDC settlement)
+│   │   └── config.py       # paths, env loading, preflight
+│   ├── scripts/
+│   │   ├── bunq_setup.py    # one-time bunq sandbox auth handshake
+│   │   ├── bunq_test.py     # connectivity + sugar daddy top-up test
+│   │   ├── sepolia_setup.py # wallet gen + Base Sepolia USDC self-transfer
+│   │   └── web3_test.py     # Base Sepolia connectivity + tx verification
+│   ├── data/
+│   │   └── contacts.json   # contractor contact book
+│   ├── audit_packets/      # generated audit JSONs (gitignored)
+│   ├── bunq_context.json   # session token + RSA key (gitignored)
+│   ├── requirements.txt
+│   └── .env.example
+├── frontend/               # React + timeline UI (TBD)
 ├── README.md
 └── .gitignore
 ```
@@ -78,10 +87,10 @@ Claude-powered agent that executes the full payment flow from a single plain-lan
 
 **Run:**
 ```bash
-cd backend && .venv/bin/python agent.py
+cd backend && .venv/bin/python -m app.agent
 ```
 
-### `stubs.py` — colleague surface
+### `app/stubs.py` — colleague surface
 
 Fake implementations clearly marked `# TODO: replace with real integration`:
 - `aml_screen` → Didit API
@@ -93,7 +102,7 @@ Fake implementations clearly marked `# TODO: replace with real integration`:
 Full 4-step auth handshake: RSA key generation → `/installation` → `/device-server` → `/session-server`. Session token and private key saved to `bunq_context.json`. All payment calls signed with RSA-SHA256.
 
 ```bash
-cd backend && .venv/bin/python bunq_setup.py
+cd backend && .venv/bin/python scripts/bunq_setup.py
 ```
 
 ### Base Sepolia setup
@@ -101,7 +110,7 @@ cd backend && .venv/bin/python bunq_setup.py
 Wallet generation + USDC contract verification against Base Sepolia (chain 84532). Pre-baked tx hash sourced from a real confirmed on-chain USDC transfer.
 
 ```bash
-cd backend && .venv_web3/bin/python sepolia_setup.py
+cd backend && .venv/bin/python scripts/sepolia_setup.py
 ```
 
 ## What's Real vs Stubbed
@@ -122,7 +131,8 @@ cd backend && .venv_web3/bin/python sepolia_setup.py
 ```bash
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-cp .env.example .env   # fill in BUNQ_API_KEY and ANTHROPIC_API_KEY
-.venv/bin/python bunq_setup.py   # generates session token
-.venv/bin/python agent.py        # run the agent
+cp .env.example .env                       # fill in BUNQ_API_KEY and ANTHROPIC_API_KEY
+.venv/bin/python scripts/bunq_setup.py     # generates session token + bunq_context.json
+.venv/bin/python scripts/sepolia_setup.py  # wallet + FAKE_TX_HASH (optional, for settlement display)
+.venv/bin/python -m app.agent              # run the agent
 ```

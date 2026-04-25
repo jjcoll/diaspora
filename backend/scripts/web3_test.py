@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 from web3 import Web3
 from eth_account import Account
 
-load_dotenv()
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(dotenv_path=os.path.join(BACKEND_DIR, ".env"))
 
 w3 = Web3(Web3.HTTPProvider("https://sepolia.base.org"))
 

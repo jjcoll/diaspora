@@ -1,7 +1,15 @@
+import { createPortal } from "react-dom";
 import Icon from "./Icon";
 import { Pill, StatusPill } from "./Pill";
-import { countryName, flagFor, formatDate, formatEUR } from "../lib/format";
+import { countryName, formatDate, formatEUR } from "../lib/format";
 import type { Contractor } from "../types";
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 interface Props {
   contractor: Contractor;
@@ -14,13 +22,16 @@ export default function ContractorDrawer({ contractor: c, onClose, onToast }: Pr
   const paid = c.paid_total_eur ?? 0;
   const count = c.payments_count ?? 0;
 
-  return (
-    <>
-      <div className="drawer-overlay" onClick={onClose} />
-      <aside className="drawer" role="dialog">
+  return createPortal(
+    <div className="drawer-overlay" onClick={onClose}>
+      <aside
+        className="drawer"
+        role="dialog"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="drawer-grabber" />
         <div className="drawer-head">
-          <div className="flag-ring">{flagFor(c.country)}</div>
+          <div className="initials-ring">{initials(c.name)}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="drawer-title">{c.name}</div>
             <div className="drawer-sub">
@@ -116,6 +127,7 @@ export default function ContractorDrawer({ contractor: c, onClose, onToast }: Pr
           </div>
         </div>
       </aside>
-    </>
+    </div>,
+    document.body,
   );
 }

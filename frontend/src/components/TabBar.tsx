@@ -12,7 +12,7 @@ export default function TabBar({ tab, setTab }: Props) {
     <nav className="tabbar">
       <div className="tabbar-inner">
         <div className="desktop-brand only-desktop">
-          <div className="mark">d</div>
+          <div className="mark mark-logo" role="img" aria-label="diaspora" />
           <div className="word">diaspora</div>
         </div>
         <button

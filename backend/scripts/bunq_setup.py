@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Run once: python bunq_setup.py
-Saves session token + user/account IDs to bunq_context.json
+Run once: python scripts/bunq_setup.py
+Saves session token + user/account IDs to backend/bunq_context.json
 """
 import os
 import json
@@ -12,7 +12,10 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from dotenv import load_dotenv
 
-load_dotenv()
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENV_PATH = os.path.join(BACKEND_DIR, ".env")
+CTX_PATH = os.path.join(BACKEND_DIR, "bunq_context.json")
+load_dotenv(dotenv_path=ENV_PATH)
 
 BASE_URL = "https://public-api.sandbox.bunq.com/v1"
 API_KEY = os.getenv("BUNQ_API_KEY")
@@ -132,10 +135,10 @@ ctx = {
     "private_key_pem": private_pem,
     "created_at": datetime.now(timezone.utc).isoformat(),
 }
-with open("bunq_context.json", "w") as f:
+with open(CTX_PATH, "w") as f:
     json.dump(ctx, f, indent=2)
 
-print("\n✅ Done! Context saved to bunq_context.json")
+print(f"\n✅ Done! Context saved to {CTX_PATH}")
 print("   Add to .env:")
 print(f"   BUNQ_USER_ID={user_id}")
 print(f"   BUNQ_ACCOUNT_ID={account_id}")

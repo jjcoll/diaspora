@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """Verify sandbox connection and top up with test money."""
 import json
+import os
 from datetime import datetime, timezone
 import httpx
 
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CTX_PATH = os.path.join(BACKEND_DIR, "bunq_context.json")
+
 BASE_URL = "https://public-api.sandbox.bunq.com/v1"
-ctx = json.load(open("bunq_context.json"))
+with open(CTX_PATH) as f:
+    ctx = json.load(f)
 
 
 def headers(rid=None):

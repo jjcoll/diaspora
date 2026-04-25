@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import Icon from "./Icon";
 
-const TRANSCRIPTS = [
-  "Pay Chidinma 1200 EUR for the Q2 backend retainer",
-  "Send José 500 euros for October invoice",
-  "Pay Diego 800 EUR for the design sprint",
-];
+const FIXED_TRANSCRIPT = "find jose in contact list and send him 480 euros for weaving workshop";
+const AUTO_STOP_MS = 4500;
+const TRANSCRIBE_MS = 1200;
 
 interface Props {
   message: string;
@@ -17,37 +15,57 @@ interface Props {
 export default function Composer({ message, setMessage, onSubmit, disabled }: Props) {
   const [recording, setRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [transcribing, setTranscribing] = useState(false);
   const tickRef = useRef<number | null>(null);
+  const autoStopRef = useRef<number | null>(null);
+  const transcribeRef = useRef<number | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
+      if (autoStopRef.current) clearTimeout(autoStopRef.current);
+      if (transcribeRef.current) clearTimeout(transcribeRef.current);
     };
   }, []);
 
-  function startRecording(e?: { preventDefault?: () => void }) {
-    e?.preventDefault?.();
-    if (disabled) return;
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = `${Math.min(ta.scrollHeight, 160)}px`;
+  }, [message, recording]);
+
+  function startRecording() {
+    if (disabled || recording) return;
     setRecording(true);
     setRecordingTime(0);
     tickRef.current = window.setInterval(() => {
       setRecordingTime((t) => t + 0.1);
     }, 100);
+    autoStopRef.current = window.setTimeout(() => {
+      stopRecording(false);
+    }, AUTO_STOP_MS);
   }
 
-  function stopRecording(cancel = false, e?: { preventDefault?: () => void }) {
-    e?.preventDefault?.();
+  function stopRecording(cancel = false) {
     if (tickRef.current) {
       clearInterval(tickRef.current);
       tickRef.current = null;
     }
-    const duration = recordingTime;
+    if (autoStopRef.current) {
+      clearTimeout(autoStopRef.current);
+      autoStopRef.current = null;
+    }
     setRecording(false);
     setRecordingTime(0);
-    if (cancel || duration < 0.5) return;
-    const t = TRANSCRIPTS[Math.floor(Math.random() * TRANSCRIPTS.length)];
-    setMessage(t);
-    setTimeout(() => onSubmit(t), 180);
+    if (cancel) return;
+    setTranscribing(true);
+    transcribeRef.current = window.setTimeout(() => {
+      setMessage(FIXED_TRANSCRIPT);
+      setTranscribing(false);
+      transcribeRef.current = null;
+    }, TRANSCRIBE_MS);
   }
 
   if (recording) {
@@ -56,10 +74,10 @@ export default function Composer({ message, setMessage, onSubmit, disabled }: Pr
         <div className="recorder">
           <span className="timer">{recordingTime.toFixed(1)}s</span>
           <div className="waves">
-            {Array.from({ length: 22 }).map((_, i) => (
+            {Array.from({ length: 48 }).map((_, i) => (
               <span
                 key={i}
-                style={{ animationDelay: `${(i * 0.07) % 1}s` }}
+                style={{ animationDelay: `${(i * 0.05) % 1}s` }}
               />
             ))}
           </div>
@@ -82,20 +100,34 @@ export default function Composer({ message, setMessage, onSubmit, disabled }: Pr
     );
   }
 
+  if (transcribing) {
+    return (
+      <div className="composer transcribing">
+        <Icon name="loader" size={16} />
+        <span className="transcribing-label">Transcribing…</span>
+      </div>
+    );
+  }
+
   const hasText = message.trim().length > 0;
 
   return (
     <div className="composer">
       <span className="sparkle"><Icon name="sparkle" size={15} /></span>
-      <input
+      <textarea
+        ref={textareaRef}
         className="composer-input"
         placeholder="Pay Chidinma 1200 EUR for Q2…"
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") onSubmit(message);
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            onSubmit(message);
+          }
         }}
         disabled={disabled}
+        rows={1}
       />
       {hasText ? (
         <button
@@ -109,12 +141,8 @@ export default function Composer({ message, setMessage, onSubmit, disabled }: Pr
       ) : (
         <button
           className="mic-btn"
-          onMouseDown={() => startRecording()}
-          onMouseUp={() => stopRecording(false)}
-          onMouseLeave={() => recording && stopRecording(true)}
-          onTouchStart={(e) => startRecording(e)}
-          onTouchEnd={(e) => stopRecording(false, e)}
-          aria-label="Hold to record voice note"
+          onClick={startRecording}
+          aria-label="Tap to record voice note"
         >
           <Icon name="mic" size={18} />
         </button>
