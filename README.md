@@ -2,6 +2,16 @@
 
 A multimodal AI payment agent that turns plain language, voice notes, and invoice documents into compliant cross-border transfers — using stablecoins as invisible rails to collapse 5-day, ~7%-fee SEPA payments into 20-second, fully auditable transactions on top of bunq.
 
+> **Built for [bunq Hackathon 7.0](https://bunq.com)** — Multimodal AI in banking.
+
+## Live Demo
+
+- **Frontend:** https://diaspora-dusky.vercel.app
+- **Backend API:** https://backend-red-sky-7100.fly.dev
+- **Source:** https://github.com/jjcoll/diaspora
+
+Try it from the live URL: tap the mic and speak ("pay José 480 euros for the weaving workshop"), or click the paperclip and upload `Invoice for Jose Nov 2024.pdf` from this repo. The agent runs the full flow — resolve, balance check, AML, FX quote, consent, execute, audit packet — in front of your eyes via Server-Sent Events.
+
 ## The Problem
 
 Paying a freelancer in Venezuela or Nigeria from a European bank account today means a 5-day wait, ~7% in fees, and zero visibility into where the money is. SEPA doesn't reach them. SWIFT does, badly. Stablecoins reach them in seconds — but no bank operator wants to touch the compliance, FX, and audit story themselves.
@@ -159,9 +169,10 @@ The repo ships `frontend/vercel.json` (SPA rewrites). Connect the GitHub repo in
 
 Then deploy. The frontend talks to the Fly backend directly (no Vite proxy in prod).
 
-### Demo URL
+### Live deployment for this submission
 
-After both are deployed: `https://diaspora.vercel.app` (or your custom Vercel domain).
+- Backend (Fly.io, ams region): `https://backend-red-sky-7100.fly.dev`
+- Frontend (Vercel): `https://diaspora-dusky.vercel.app`
 
 ## Known Limitations
 
