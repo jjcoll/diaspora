@@ -98,20 +98,20 @@ The packet is structured so an auditor gets identity, consent, screening, execut
 
 ## What's Real vs Mocked
 
+We were honest about the line. Real integrations are real; the things we couldn't wire to a live API in the hackathon window are stubbed in `app/stubs.py`, and **every stub returns the exact shape the real API would**, so swapping in is a single-file change.
+
 | Component | Status | Notes |
 |---|---|---|
 | bunq sandbox auth (RSA-2048 install/device/session handshake) | real | `scripts/bunq_setup.py` |
 | bunq balance check (RSA-signed GET) | real | `app/bunq.py` |
 | Anthropic tool-use loop | real | `app/agent.py` |
 | Audit packet (JSON + SHA-256) | real | `app/audit.py` |
-| Voice input → text (Amazon Transcribe, batch via S3) | real | `app/aws.py`, `POST /api/transcribe` |
-| Invoice scan → structured fields (Amazon Textract `AnalyzeExpense`) | real | `app/aws.py`, `POST /api/extract-invoice` |
-| AML screening | stub | drop-in shape for Didit |
-| FX quote | stub | hardcoded 1.08, ECB/Wise drop-in |
-| SEPA payment execution | stub | shape matches a bridge.xyz off-ramp IBAN call |
-| USDC settlement | stub | returns a pre-baked Base Sepolia tx hash from setup |
-
-Every stub lives in `app/stubs.py` and returns the exact shape the real API would. Swapping in a live integration is a single-file change.
+| Voice → text (Amazon Transcribe, batch via S3) | real | `app/aws.py`, `POST /api/transcribe` |
+| Invoice → structured fields (Amazon Textract `AnalyzeExpense`) | real | `app/aws.py`, `POST /api/extract-invoice` |
+| AML screening | stub → **Didit** | shape matches Didit session API |
+| FX quote | stub → **ECB / Wise** | hardcoded 1.08 with configurable spread |
+| SEPA payment execution | stub → **Bridge / BVNK** | shape matches an off-ramp IBAN call |
+| USDC settlement | stub → **Bridge / BVNK** | returns a pre-baked Base Sepolia tx hash |
 
 ## Run It
 
@@ -132,47 +132,9 @@ npm run dev                                       # UI on :5173
 
 ## Deploy
 
-Backend → **Fly.io**, frontend → **Vercel**. Both have free tiers and the round-trip from `git push` to live URL is ~5 minutes.
+Backend → **Fly.io** (Docker, `ams` region). Frontend → **Vercel** (Vite, `frontend/` as Root Directory). The repo ships `backend/Dockerfile`, `backend/fly.toml`, and `frontend/vercel.json`. `bunq_context.json` is read from the `BUNQ_CONTEXT_JSON` env var when set, so Fly secrets work without volume mounts. CORS is env-driven (`CORS_ORIGINS`).
 
-### Backend (Fly.io)
-
-The repo ships `backend/Dockerfile` and `backend/fly.toml`. The app reads its bunq context from `BUNQ_CONTEXT_JSON` (env var, JSON-encoded) instead of a file when set, so no volume mounts are needed.
-
-```bash
-cd backend
-flyctl launch --no-deploy --copy-config            # creates app, accepts existing fly.toml
-flyctl secrets set \
-  ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" \
-  BUNQ_API_KEY="$BUNQ_API_KEY" \
-  BUNQ_USER_ID="$BUNQ_USER_ID" \
-  BUNQ_ACCOUNT_ID="$BUNQ_ACCOUNT_ID" \
-  BUNQ_CONTEXT_JSON="$(cat bunq_context.json)" \
-  AWS_ACCESS_KEY_ID="..." \
-  AWS_SECRET_ACCESS_KEY="..." \
-  AWS_SESSION_TOKEN="..." \
-  AWS_REGION=us-east-1 \
-  AWS_S3_BUCKET=diaspora-uploads-<account-id> \
-  CORS_ORIGINS="https://diaspora.vercel.app,https://<your-vercel-preview>.vercel.app"
-flyctl deploy --remote-only
-```
-
-> **Use a real IAM user for the deployed env**, not the workshop STS creds — those expire in hours. Create one in your AWS account with `AmazonTextractFullAccess`, `AmazonTranscribeFullAccess`, and S3 access scoped to the upload bucket. Drop `AWS_SESSION_TOKEN` from the secrets above when you switch.
-
-### Frontend (Vercel)
-
-The repo ships `frontend/vercel.json` (SPA rewrites). Connect the GitHub repo in Vercel, set:
-- **Root Directory:** `frontend`
-- **Framework Preset:** Vite
-- **Build Command:** `npm run build`
-- **Output Directory:** `dist`
-- **Environment Variable:** `VITE_API_BASE=https://diaspora-backend.fly.dev` (or whatever your Fly URL is)
-
-Then deploy. The frontend talks to the Fly backend directly (no Vite proxy in prod).
-
-### Live deployment for this submission
-
-- Backend (Fly.io, ams region): `https://backend-red-sky-7100.fly.dev`
-- Frontend (Vercel): `https://diaspora-dusky.vercel.app`
+Live: `https://diaspora-dusky.vercel.app` → `https://backend-red-sky-7100.fly.dev`
 
 ## Known Limitations
 
