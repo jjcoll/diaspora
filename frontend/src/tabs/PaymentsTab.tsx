@@ -74,10 +74,28 @@ export default function PaymentsTab() {
     };
   }, []);
 
+  function resetForNewCycle(initialMsg: string) {
+    sessionRef.current =
+      Math.random().toString(36).slice(2) + Date.now().toString(36);
+    collected.current = {};
+    setSteps([]);
+    setReceipt(null);
+    setReceiptOpen(false);
+    setQuote(null);
+    setChat([{ role: "user", text: initialMsg }]);
+  }
+
   async function send(msg: string) {
     if (!msg.trim() || busy) return;
     setBusy(true);
-    setChat((c) => [...c, { role: "user", text: msg }]);
+
+    const lower = msg.trim().toLowerCase();
+    const isConsent = lower === "yes" || lower === "y" || lower === "no" || lower === "n";
+    if (receipt && !isConsent) {
+      resetForNewCycle(msg);
+    } else {
+      setChat((c) => [...c, { role: "user", text: msg }]);
+    }
 
     try {
       for await (const ev of sendChat(sessionRef.current, msg)) {
@@ -98,8 +116,9 @@ export default function PaymentsTab() {
 
   function applyEvent(ev: AgentEvent) {
     if (ev.type === "text") {
-      // Suppress the boilerplate completion line — the Receipt component renders the result.
-      if (ev.text.trim().toLowerCase() === "done.") return;
+      const t = ev.text.trim().toLowerCase();
+      // QuoteCard / ReceiptSummary already render the prompts/results — suppress boilerplate.
+      if (t === "done." || t === "confirm payment?") return;
       setChat((c) => [...c, { role: "agent", text: ev.text }]);
     } else if (ev.type === "tool_use") {
       const title = STEP_LABEL[ev.name] ?? ev.name;

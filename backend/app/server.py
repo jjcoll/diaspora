@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from .agent import _agent_turn
 from .aws import extract_invoice, transcribe_audio
-from .tools import CONTACTS
+from .tools import CONTACTS, resolve_contractor
 
 app = FastAPI(title="diaspora")
 
@@ -112,9 +112,12 @@ async def transcribe_endpoint(audio: UploadFile = File(...)):
     if not data:
         raise HTTPException(status_code=400, detail="empty audio")
     mime = audio.content_type or "audio/webm"
+    print(f"[transcribe] {len(data)} bytes, mime={mime}")
     try:
-        text = transcribe_audio(data, mime=mime)
+        text = await asyncio.to_thread(transcribe_audio, data, mime)
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=502, detail=f"transcribe failed: {exc}")
     return {"text": text.strip()}
 
@@ -124,13 +127,23 @@ async def extract_invoice_endpoint(file: UploadFile = File(...)):
     data = await file.read()
     if not data:
         raise HTTPException(status_code=400, detail="empty file")
+    print(f"[extract-invoice] {len(data)} bytes, mime={file.content_type}")
     try:
-        fields = extract_invoice(data)
+        fields = await asyncio.to_thread(extract_invoice, data)
     except Exception as exc:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=502, detail=f"textract failed: {exc}")
-    parts = ["Pay"]
+    display_name = fields["vendor"]
     if fields["vendor"]:
-        parts.append(fields["vendor"])
+        match = resolve_contractor(fields["vendor"])
+        if match.get("found"):
+            display_name = match["name"]
+            fields["matched_contact"] = match["name"]
+
+    parts = ["Pay"]
+    if display_name:
+        parts.append(display_name)
     if fields["amount"] is not None:
         amount = fields["amount"]
         amount_str = f"{amount:.2f}".rstrip("0").rstrip(".") if isinstance(amount, float) else str(amount)

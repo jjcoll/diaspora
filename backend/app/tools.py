@@ -31,9 +31,13 @@ def list_contractors() -> dict:
 
 
 def resolve_contractor(name: str) -> dict:
-    key = _normalize(name.split()[0])
+    if not name or not name.strip():
+        return {"found": False, "name": name}
+    query_tokens = {_normalize(t) for t in name.split() if t}
     for k, v in CONTACTS.items():
-        if _normalize(k) == key or _normalize(v["name"].split()[0]) == key:
+        contact_tokens = {_normalize(t) for t in v["name"].split() if t}
+        contact_tokens.add(_normalize(k))
+        if query_tokens & contact_tokens:
             return {"found": True, **v}
     return {"found": False, "name": name}
 
