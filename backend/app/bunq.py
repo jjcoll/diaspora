@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 from datetime import datetime, timezone
 
 import httpx
@@ -10,8 +11,16 @@ from .config import CTX_PATH
 
 BUNQ_BASE = "https://public-api.sandbox.bunq.com/v1"
 
-with open(CTX_PATH) as f:
-    CTX = json.load(f)
+
+def _load_ctx() -> dict:
+    raw = os.getenv("BUNQ_CONTEXT_JSON")
+    if raw:
+        return json.loads(raw)
+    with open(CTX_PATH) as f:
+        return json.load(f)
+
+
+CTX = _load_ctx()
 
 _private_key = serialization.load_pem_private_key(
     CTX["private_key_pem"].encode(), password=None

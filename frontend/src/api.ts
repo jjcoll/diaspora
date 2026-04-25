@@ -1,6 +1,6 @@
 import type { Contractor } from "./types";
 
-const API_BASE = "";
+const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
 
 export type AgentEvent =
   | { type: "text"; text: string }

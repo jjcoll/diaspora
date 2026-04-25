@@ -26,10 +26,10 @@ def run_preflight() -> None:
             f"contacts.json missing at {CONTACTS_PATH}",
             "create it (see README) or restore from git",
         ))
-    if not os.path.exists(CTX_PATH):
+    if not os.path.exists(CTX_PATH) and not os.getenv("BUNQ_CONTEXT_JSON"):
         problems.append((
             f"bunq_context.json missing at {CTX_PATH}",
-            "run: .venv/bin/python scripts/bunq_setup.py",
+            "run: .venv/bin/python scripts/bunq_setup.py (or set BUNQ_CONTEXT_JSON env)",
         ))
     if problems:
         print("Preflight failed:")

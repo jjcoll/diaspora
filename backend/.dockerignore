@@ -1,0 +1,11 @@
+.venv
+__pycache__
+*.pyc
+.env
+.env.*
+.pytest_cache
+audit_packets/
+bunq_context.json
+scripts/
+*.md
+.git
