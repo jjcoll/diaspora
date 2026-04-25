@@ -133,6 +133,9 @@ body:has(.receipt-modal-overlay) .app .stage::after { opacity: 0 !important; }
 }
 .head, .stage-pad { position: relative; z-index: 1; }
 
+.tab-panel { display: contents; }
+.tab-panel[hidden] { display: none; }
+
 .stage-pad {
   flex: 1;
   min-height: 0;

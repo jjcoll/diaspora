@@ -37,7 +37,11 @@ interface QuoteState {
   eta?: string;
 }
 
-export default function PaymentsTab() {
+interface PaymentsTabProps {
+  active?: boolean;
+}
+
+export default function PaymentsTab({ active = true }: PaymentsTabProps) {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [steps, setSteps] = useState<TimelineStep[]>([]);
@@ -50,13 +54,16 @@ export default function PaymentsTab() {
   );
   const collected = useRef<QuoteState>({});
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const padRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!active) return;
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [chat, steps, quote, receipt]);
+  }, [chat, steps, quote, receipt, active]);
 
   useEffect(() => {
-    const pad = document.querySelector(".stage-pad") as HTMLElement | null;
+    if (!active) return;
+    const pad = padRef.current;
     const app = document.querySelector(".app") as HTMLElement | null;
     if (!pad || !app) return;
     const update = () => {
@@ -72,7 +79,7 @@ export default function PaymentsTab() {
       mo.disconnect();
       if (app) delete app.dataset.overflow;
     };
-  }, []);
+  }, [active]);
 
   function resetForNewCycle(initialMsg: string) {
     sessionRef.current =
@@ -220,7 +227,7 @@ export default function PaymentsTab() {
   const showComposer = !quote;
 
   return (
-    <div className="stage-pad">
+    <div className="stage-pad" ref={padRef}>
       <div className="chat">
         {chat.map((m, i) => (
           <div key={i} className={`chat-msg ${m.role}`}>

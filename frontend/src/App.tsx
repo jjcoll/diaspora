@@ -25,11 +25,12 @@ export default function App() {
       <div className="stage">
         <TopHeader tab={tab} />
 
-        {tab === "payments" ? (
-          <PaymentsTab />
-        ) : (
+        <div className="tab-panel" hidden={tab !== "payments"}>
+          <PaymentsTab active={tab === "payments"} />
+        </div>
+        <div className="tab-panel" hidden={tab !== "contractors"}>
           <ContractorsTab contractors={contractors} onToast={show} />
-        )}
+        </div>
       </div>
 
       {toastNode}
