@@ -45,14 +45,84 @@ Every payment the agent executes carries the evidence needed to stand up to an a
 
 ```
 diaspora/
-├── backend/      # FastAPI + agent
-├── frontend/     # React + timeline UI
+├── backend/
+│   ├── agent.py          # Claude-powered payment agent (main entry point)
+│   ├── stubs.py          # Stub implementations (AML, FX, off-ramp settlement)
+│   ├── contacts.json     # Contractor contact book
+│   ├── bunq_setup.py     # One-time bunq sandbox auth handshake (RSA + session)
+│   ├── bunq_test.py      # bunq connectivity + sugar daddy top-up test
+│   ├── sepolia_setup.py  # Wallet generation + Base Sepolia USDC self-transfer
+│   ├── web3_test.py      # Base Sepolia connectivity + tx verification test
+│   ├── requirements.txt  # Python dependencies
+│   └── .env.example      # Environment variable template
+├── frontend/             # React + timeline UI (TBD)
 ├── README.md
 └── .gitignore
 ```
 
-### `backend/`
-FastAPI service hosting the payment agent. Handles intent parsing, contractor resolution, balance checks, FX quoting, compliance screening, on-chain execution, and receipt generation.
+## What's Built
 
-### `frontend/`
-React app showing the payment timeline — each of the 15 legitimacy artifacts rendered as a step the user can inspect in real time, ending with the block explorer receipt.
+### `agent.py` — the payment agent
+
+Claude-powered agent that executes the full payment flow from a single plain-language instruction. Runs as a terminal app.
+
+**Flow:**
+1. `resolve_contractor` — looks up recipient from `contacts.json`
+2. `check_balance` — real bunq sandbox API call with RSA signing
+3. `aml_screen` — AML/sanctions screening (stub, replace with Didit)
+4. `generate_fx_quote` — FX quote with fee breakdown (stub, replace with live feed)
+5. Consent gate — waits for explicit user `yes` before any payment fires
+6. `execute_sepa_payment` — real SEPA payment via bunq sandbox API
+7. `simulate_usdc_settlement` — pre-baked Base Sepolia tx hash (stub, replace with Bridge/BVNK)
+8. `generate_audit_packet` — JSON receipt with SHA-256 fingerprint
+
+**Run:**
+```bash
+cd backend && .venv/bin/python agent.py
+```
+
+### `stubs.py` — colleague surface
+
+Fake implementations clearly marked `# TODO: replace with real integration`:
+- `aml_screen` → Didit API
+- `generate_fx_quote` → live FX feed (ECB, Wise, etc.)
+- `simulate_usdc_settlement` → Bridge / BVNK off-ramp webhook
+
+### bunq sandbox setup
+
+Full 4-step auth handshake: RSA key generation → `/installation` → `/device-server` → `/session-server`. Session token and private key saved to `bunq_context.json`. All payment calls signed with RSA-SHA256.
+
+```bash
+cd backend && .venv/bin/python bunq_setup.py
+```
+
+### Base Sepolia setup
+
+Wallet generation + USDC contract verification against Base Sepolia (chain 84532). Pre-baked tx hash sourced from a real confirmed on-chain USDC transfer.
+
+```bash
+cd backend && .venv_web3/bin/python sepolia_setup.py
+```
+
+## What's Real vs Stubbed
+
+| Component | Status |
+|---|---|
+| bunq sandbox auth (RSA handshake) | ✅ real |
+| bunq balance check | ✅ real API call |
+| bunq SEPA payment execution | ✅ real API call |
+| AML screening | 🔧 stub → replace with Didit |
+| FX rate | 🔧 stub → hardcoded 1.08 |
+| USDC off-ramp settlement | 🔧 stub → pre-baked Base Sepolia tx |
+| Audit packet (JSON + SHA-256) | ✅ real |
+| Base Sepolia RPC connection | ✅ real |
+
+## Environment Setup
+
+```bash
+cd backend
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env   # fill in BUNQ_API_KEY and ANTHROPIC_API_KEY
+.venv/bin/python bunq_setup.py   # generates session token
+.venv/bin/python agent.py        # run the agent
+```

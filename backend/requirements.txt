@@ -1,0 +1,5 @@
+httpx
+cryptography
+python-dotenv
+web3
+anthropic
