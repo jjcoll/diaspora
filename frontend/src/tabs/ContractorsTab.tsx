@@ -1,51 +1,23 @@
 import { useState } from "react";
 import ContractorRow from "../components/ContractorRow";
 import ContractorDrawer from "../components/ContractorDrawer";
-import InviteModal from "../components/InviteModal";
+import InviteModal, { type InviteForm } from "../components/InviteModal";
 import Icon from "../components/Icon";
-import type { Contractor, InviteResponse } from "../types";
+import type { Contractor } from "../types";
 
 interface Props {
   contractors: Contractor[];
-  setContractors: React.Dispatch<React.SetStateAction<Contractor[]>>;
   onToast: (msg: string) => void;
-  refreshContractors: () => void;
 }
 
-export default function ContractorsTab({
-  contractors,
-  setContractors,
-  onToast,
-  refreshContractors,
-}: Props) {
+export default function ContractorsTab({ contractors, onToast }: Props) {
   const [showModal, setShowModal] = useState(false);
   const [selected, setSelected] = useState<Contractor | null>(null);
-  const [banner, setBanner] = useState<{ name: string; url: string } | null>(null);
 
-  function handleInvited(
-    invite: InviteResponse,
-    form: { name: string; email: string; country: string; wallet_address: string },
-  ) {
-    setContractors((prev) => [
-      {
-        id: invite.contractor_id,
-        name: form.name,
-        email: form.email,
-        country: form.country.toUpperCase(),
-        wallet_address: form.wallet_address,
-        status: "pending",
-        didit_session_id: "",
-        verified_at: null,
-        created_at: new Date().toISOString(),
-        paid_total_eur: 0,
-        payments_count: 0,
-      },
-      ...prev,
-    ]);
-    setBanner({ name: form.name, url: invite.verification_url });
+  function handleInvite(_form: InviteForm) {
+    // Wire up to backend later.
     setShowModal(false);
     onToast("Invite sent");
-    refreshContractors();
   }
 
   const verified = contractors.filter((c) => c.status === "verified");
@@ -65,32 +37,6 @@ export default function ContractorsTab({
           <Icon name="plus" size={14} />Invite
         </button>
       </div>
-
-      {banner && (
-        <div className="banner">
-          <Icon name="check" size={16} />
-          <div className="txt">
-            Verification link ready for <strong>{banner.name}</strong>
-            <code>{banner.url}</code>
-          </div>
-          <button
-            className="btn sm subtle"
-            onClick={() => {
-              navigator.clipboard?.writeText(banner.url);
-              onToast("Link copied");
-            }}
-          >
-            Copy
-          </button>
-          <button
-            className="x"
-            onClick={() => setBanner(null)}
-            aria-label="Dismiss"
-          >
-            <Icon name="x" size={14} />
-          </button>
-        </div>
-      )}
 
       {verified.length > 0 && (
         <>
@@ -147,7 +93,7 @@ export default function ContractorsTab({
       {showModal && (
         <InviteModal
           onClose={() => setShowModal(false)}
-          onInvited={handleInvited}
+          onSubmit={handleInvite}
         />
       )}
     </div>
