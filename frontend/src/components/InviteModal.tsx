@@ -1,44 +1,30 @@
 import { useState } from "react";
-import { inviteContractor } from "../api";
 import { COUNTRY_FLAGS, COUNTRY_NAMES } from "../lib/format";
-import type { InviteResponse } from "../types";
+
+export interface InviteForm {
+  name: string;
+  email: string;
+  country: string;
+  wallet_address: string;
+}
 
 interface Props {
   onClose: () => void;
-  onInvited: (
-    invite: InviteResponse,
-    form: { name: string; email: string; country: string; wallet_address: string },
-  ) => void;
+  onSubmit: (form: InviteForm) => void;
 }
 
-export default function InviteModal({ onClose, onInvited }: Props) {
+export default function InviteModal({ onClose, onSubmit }: Props) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [country, setCountry] = useState("VE");
   const [wallet, setWallet] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setSubmitting(true);
-    try {
-      const invite = await inviteContractor({
-        name,
-        email,
-        country,
-        wallet_address: wallet,
-      });
-      onInvited(invite, { name, email, country, wallet_address: wallet });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setSubmitting(false);
-    }
+    onSubmit({ name, email, country, wallet_address: wallet });
   }
 
-  const canSubmit = name.trim() && email.trim() && wallet.trim() && !submitting;
+  const canSubmit = name.trim() && email.trim() && wallet.trim();
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -95,18 +81,8 @@ export default function InviteModal({ onClose, onInvited }: Props) {
               required
             />
           </div>
-          {error && (
-            <div style={{ color: "var(--red-ink)", fontSize: 12, marginTop: 6 }}>
-              {error}
-            </div>
-          )}
           <div className="modal-actions">
-            <button
-              type="button"
-              className="btn"
-              onClick={onClose}
-              disabled={submitting}
-            >
+            <button type="button" className="btn" onClick={onClose}>
               Cancel
             </button>
             <button
@@ -114,7 +90,7 @@ export default function InviteModal({ onClose, onInvited }: Props) {
               className="btn primary"
               disabled={!canSubmit}
             >
-              {submitting ? "Sending…" : "Send invite"}
+              Send invite
             </button>
           </div>
         </form>
