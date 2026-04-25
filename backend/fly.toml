@@ -1,4 +1,4 @@
-app = "diaspora-backend"
+app = "backend-red-sky-7100"
 primary_region = "ams"
 
 [build]
