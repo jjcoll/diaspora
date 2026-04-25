@@ -51,3 +51,4 @@ htmlcov/
 *.sqlite
 *.db
 tmp/
+backend/data/diaspora.db*

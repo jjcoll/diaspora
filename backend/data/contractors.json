@@ -1,0 +1,24 @@
+[
+  {
+    "id": "c_jose_demo",
+    "name": "José Rodríguez",
+    "email": "jose@example.com",
+    "country": "VE",
+    "wallet_address": "0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b",
+    "status": "verified",
+    "didit_session_id": "didit_session_jose_seed",
+    "verified_at": "2026-04-20T10:00:00Z",
+    "created_at": "2026-04-15T10:00:00Z"
+  },
+  {
+    "id": "c_c4d84fa4e42f",
+    "name": "Aisha Bello",
+    "email": "aisha@example.com",
+    "country": "NG",
+    "wallet_address": "0xabcdef1234567890abcdef1234567890abcdef12",
+    "status": "verified",
+    "didit_session_id": "e9560e62-98d8-4907-89e3-71b2a3d430e1",
+    "verified_at": "2026-04-24T23:02:20Z",
+    "created_at": "2026-04-24T23:02:20Z"
+  }
+]
